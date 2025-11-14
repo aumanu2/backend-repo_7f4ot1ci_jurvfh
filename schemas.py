@@ -1,48 +1,72 @@
 """
-Database Schemas
+Database Schemas for the Networking App
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
+Each Pydantic model below represents a MongoDB collection. The collection
+name is the lowercase of the class name.
 
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Examples:
+- Profile -> "profile"
+- Project -> "project"
+- Endorsement -> "endorsement"
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional
+from typing import List, Optional
+from pydantic import BaseModel, Field, HttpUrl, EmailStr
 
-# Example schemas (replace with your own):
 
-class User(BaseModel):
+class Profile(BaseModel):
     """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
+    Profiles collection schema
+    Collection: "profile"
     """
     name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    email: EmailStr = Field(..., description="Email address")
+    headline: Optional[str] = Field(None, description="Short role/summary")
+    bio: Optional[str] = Field(None, description="About you")
+    skills: List[str] = Field(default_factory=list, description="List of skills")
+    interests: List[str] = Field(default_factory=list, description="Interests/topics")
+    timezone: Optional[str] = Field(None, description="IANA tz, e.g., 'America/Los_Angeles'")
+    availability: Optional[str] = Field(None, description="Availability notes / windows")
+    goals: Optional[str] = Field(None, description="Outcomes you're seeking now")
+    links: List[HttpUrl] = Field(default_factory=list, description="Portfolio or socials")
+    verified: bool = Field(default=False, description="Verification flag")
+    reputation_score: float = Field(default=0.0, ge=0.0, description="Reputation score")
 
-class Product(BaseModel):
+
+class Project(BaseModel):
     """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
+    Projects collection schema
+    Collection: "project"
     """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+    owner_id: str = Field(..., description="Profile _id string of owner")
+    title: str = Field(..., description="Project title")
+    brief: str = Field(..., description="Project description / brief")
+    tags: List[str] = Field(default_factory=list, description="Tags / skills / topics")
+    roles_needed: List[str] = Field(default_factory=list, description="Roles needed")
+    status: str = Field(default="open", description="open | in_progress | completed")
+    visibility: str = Field(default="public", description="public | community | private")
 
-# Add your own schemas here:
-# --------------------------------------------------
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Endorsement(BaseModel):
+    """
+    Endorsements collection schema
+    Collection: "endorsement"
+    """
+    from_user: str = Field(..., description="Endorser profile _id string")
+    to_user: str = Field(..., description="Endorsee profile _id string")
+    skill: str = Field(..., description="Skill endorsed")
+    comment: Optional[str] = Field(None, description="Optional note")
+    evidence_url: Optional[HttpUrl] = Field(None, description="Link to evidence/artifact")
+    weight: float = Field(default=1.0, ge=0.0, description="Trust weighting")
+
+
+# Optional: simple message schema for future chat
+class Conversation(BaseModel):
+    participant_ids: List[str] = Field(..., description="Profile IDs participating")
+    type: str = Field(default="1:1", description="1:1 | group | project")
+
+
+class Message(BaseModel):
+    conversation_id: str = Field(...)
+    from_user: str = Field(...)
+    text: str = Field(...)
